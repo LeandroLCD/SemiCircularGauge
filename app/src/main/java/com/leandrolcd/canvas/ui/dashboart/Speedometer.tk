@@ -1,0 +1,101 @@
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun Speedometer(
+    value: Float,
+    minValue: Float,
+    maxValue: Float,
+    modifier: Modifier = Modifier,
+    radius: Dp = 150.dp,
+    color: Color = Color.Blue,
+    needleColor: Color = Color.Red,
+    strokeWidth: Dp = 4.dp
+) {
+    val angle by animateFloatAsState(
+        targetValue = 180f * ((value - minValue) / (maxValue - minValue)),
+        label = "needle_animation"
+    )
+
+    Box(modifier = modifier.size(radius * 2f), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            val center = Offset(canvasWidth / 2, canvasHeight / 2)
+            val strokeWidthPx = strokeWidth.toPx()
+            
+            // Dibujar arco de fondo
+            drawArc(
+                color = color.copy(alpha = 0.2f),
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = Offset(strokeWidthPx, strokeWidthPx),
+                size = Size(canvasWidth - strokeWidthPx * 2, canvasHeight - strokeWidthPx * 2),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = strokeWidthPx,
+                    cap = StrokeCap.Round
+                )
+            )
+
+            // Dibujar marcas de escala
+            val markCount = 10
+            for (i in 0..markCount) {
+                rotate(degrees = 180f / markCount * i - 180f) {
+                    val start = center.copy(y = strokeWidthPx * 2)
+                    val end = start.copy(y = strokeWidthPx * 4)
+                    drawLine(
+                        color = color,
+                        start = start,
+                        end = end,
+                        strokeWidth = strokeWidthPx / 2
+                    )
+                }
+            }
+
+            // Dibujar aguja
+            rotate(degrees = angle) {
+                drawLine(
+                    color = needleColor,
+                    start = center,
+                    end = center.copy(y = strokeWidthPx * 4),
+                    strokeWidth = strokeWidthPx
+                )
+            }
+
+            // Dibujar punto central
+            drawCircle(
+                color = needleColor,
+                radius = strokeWidthPx * 1.5f,
+                center = center
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun PreviewSpeedometer() {
+    Speedometer(
+        value = 500f,
+        minValue = 0f,
+        maxValue = 1000f,
+        radius = 150.dp
+    )
+}
